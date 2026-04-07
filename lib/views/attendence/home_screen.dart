@@ -1,202 +1,136 @@
 import 'package:app_absensi/controllers/attendence_controller.dart';
 import 'package:app_absensi/extension/navigator.dart';
 import 'package:app_absensi/views/attendence/attendance_screen.dart';
+import 'package:app_absensi/views/attendence/history_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  bool _isFirstLoad = true;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    if (_isFirstLoad) {
+      _isFirstLoad = false;
+
+      final c = context.read<AttendanceController>();
+      c.getTodayAttendance();
+      c.getHistory();
+      c.getStats();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final controller = Provider.of<AttendanceController>(context);
+    final c = context.watch<AttendanceController>();
+    final att = c.attendance;
+
+    bool isDone = att?.checkOutTime != null;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6FA),
       body: Column(
         children: [
-          // ===== HEADER =====
+          // HEADER
           Container(
             width: double.infinity,
             padding: const EdgeInsets.only(top: 50, bottom: 30),
             decoration: const BoxDecoration(
               color: Color(0xFF1E3A8A),
-              borderRadius: BorderRadius.vertical(bottom: Radius.circular(30)),
+              borderRadius: BorderRadius.vertical(bottom: Radius.circular(40)),
             ),
             child: Column(
-              children: [
-                const Text(
-                  "MORNING",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 5),
-                Text(
-                  controller.attendance?.attendanceDate ?? "-",
-                  style: const TextStyle(color: Colors.white70),
-                ),
-                const SizedBox(height: 15),
-                const Text(
-                  "Durasi Kerja",
-                  style: TextStyle(color: Colors.white70),
-                ),
-                const SizedBox(height: 5),
-                Text(
-                  controller.attendance?.workingHours ?? "-",
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 20),
-
-          // ===== CHECK IN / OUT CARD =====
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Container(
-              padding: const EdgeInsets.all(15),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    blurRadius: 10,
-                    color: Colors.black.withOpacity(0.05),
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // Check In
-                  Expanded(
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.orange,
-                        padding: const EdgeInsets.symmetric(vertical: 15),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                      ),
-                      onPressed:
-                          controller.isLoading ||
-                              (controller.attendance?.checkOutTime != null ||
-                                  controller.attendance?.status == "izin")
-                          ? null
-                          : () async {
-                              final result = await context.push(
-                                const AttendanceScreen(),
-                              );
-
-                              if (result == true) {
-                                await controller.getTodayAttendance();
-                              }
-                            },
-                      child: Column(
-                        children: [
-                          Text(
-                            controller.attendance == null
-                                ? "Check In"
-                                : controller.attendance!.checkInTime != null &&
-                                      controller.attendance!.checkOutTime ==
-                                          null
-                                ? "Check Out"
-                                : "Selesai",
-                          ),
-                          const SizedBox(height: 5),
-                          Text(
-                            controller.attendance?.checkInTime ?? "--:--",
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 20),
-
-          // ===== RIWAYAT =====
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: const [
                 Text(
-                  "Riwayat Kehadiran",
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  "MORNING",
+                  style: TextStyle(color: Colors.white, fontSize: 18),
                 ),
-                Text("Lihat Semua", style: TextStyle(color: Colors.blue)),
+                SizedBox(height: 5),
+                Text(
+                  "Muhammad Harits",
+                  style: TextStyle(color: Colors.white70),
+                ),
               ],
             ),
           ),
 
-          const SizedBox(height: 10),
+          const SizedBox(height: 20),
 
-          // ===== LIST =====
+          // BUTTON / STATUS
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: isDone
+                ? Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.green[100],
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Center(
+                      child: Text("Hari ini sudah absensi ✅"),
+                    ),
+                  )
+                : ElevatedButton(
+                    onPressed: () async {
+                      final result = await context.push(
+                        const AttendanceScreen(),
+                      );
+
+                      if (result == true) {
+                        final c = context.read<AttendanceController>();
+
+                        await c.getTodayAttendance();
+                        await c.getHistory();
+                        await c.getStats();
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orange,
+                      minimumSize: const Size(double.infinity, 60),
+                    ),
+                    child: Text(att == null ? "Check In" : "Check Out"),
+                  ),
+          ),
+
+          // STATS
+          if (c.stats != null)
+            Padding(
+              padding: const EdgeInsets.all(10),
+              child: Text(
+                "Masuk: ${c.stats!['total_masuk']} | Izin: ${c.stats!['total_izin']}",
+              ),
+            ),
+
+          // HISTORY
           Expanded(
             child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              itemCount: 5, // sementara dummy
-              itemBuilder: (context, index) {
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 10),
-                  padding: const EdgeInsets.all(15),
-                  decoration: BoxDecoration(
-                    color: Colors.orange[100],
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: Colors.orange,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Column(
-                          children: [
-                            Text(
-                              "${controller.attendance?.attendanceDate ?? '-'}",
-                            ),
-                            Text(
-                              "${controller.attendance?.workingHours ?? '-'}",
-                            ),
-                          ],
-                        ),
-                      ),
+              itemCount: c.history.length,
+              itemBuilder: (_, i) {
+                final h = c.history[i];
 
-                      const SizedBox(width: 15),
-
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "Check In: ${controller.attendance?.checkInTime ?? '-'}",
-                            ),
-                            Text(
-                              "Check Out: ${controller.attendance?.checkOutTime ?? '-'}",
-                            ),
-                            Text(
-                              "Status: ${controller.attendance?.status ?? '-'}",
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+                return ListTile(
+                  title: Text(h.attendanceDate),
+                  subtitle: Text(
+                    "${h.checkInTime ?? '-'} - ${h.checkOutTime ?? '-'}",
                   ),
+                  trailing: Text(h.status ?? "-"),
+                  onTap: () async {
+                    await context.push(HistoryScreen());
+
+                    final c = context.read<AttendanceController>();
+                    await c.getTodayAttendance();
+                    await c.getHistory();
+                    await c.getStats();
+                  },
                 );
               },
             ),

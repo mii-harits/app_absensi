@@ -1,10 +1,10 @@
 import 'package:app_absensi/controllers/attendence_controller.dart';
-import 'package:app_absensi/models/attendence_model.dart';
+import 'package:app_absensi/extension/navigator.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
-import 'package:provider/provider.dart';
 
 class AttendanceScreen extends StatefulWidget {
   const AttendanceScreen({super.key});
@@ -16,7 +16,10 @@ class AttendanceScreen extends StatefulWidget {
 class _AttendanceScreenState extends State<AttendanceScreen> {
   LatLng? currentLatLng;
   String address = "Mengambil lokasi...";
-  final TextEditingController alasanController = TextEditingController();
+  bool isLocationLoaded = false;
+
+  final alasanController = TextEditingController();
+  bool isIzin = false;
 
   @override
   void initState() {
@@ -24,61 +27,66 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     getLocation();
   }
 
-  // ================= GET LOCATION =================
   Future<void> getLocation() async {
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) return;
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        setState(() => address = "GPS tidak aktif");
+        return;
+      }
 
-    LocationPermission permission = await Geolocator.requestPermission();
-    if (permission == LocationPermission.denied) return;
+      LocationPermission permission = await Geolocator.checkPermission();
 
-    final position = await Geolocator.getCurrentPosition();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
 
-    setState(() {
-      currentLatLng = LatLng(position.latitude, position.longitude);
-    });
+      if (permission == LocationPermission.deniedForever) {
+        setState(() => address = "Permission ditolak permanen");
+        return;
+      }
 
-    // GET ADDRESS
-    List<Placemark> placemarks = await placemarkFromCoordinates(
-      position.latitude,
-      position.longitude,
-    );
+      final position = await Geolocator.getCurrentPosition();
 
-    setState(() {
-      address = "${placemarks.first.locality}, ${placemarks.first.country}";
-    });
+      final placemarks = await placemarkFromCoordinates(
+        position.latitude,
+        position.longitude,
+      );
+
+      setState(() {
+        currentLatLng = LatLng(position.latitude, position.longitude);
+        address = "${placemarks.first.locality}, ${placemarks.first.country}";
+      });
+    } catch (e) {
+      setState(() => address = "Gagal ambil lokasi");
+      debugPrint("LOCATION ERROR: $e");
+    }
   }
 
-  // ================= STATUS UI =================
-  Color getStatusColor(Attendance? att) {
-    if (att == null) return Colors.grey;
-    if (att.status == "izin") return Colors.orange;
-    if (att.checkInTime != null && att.checkOutTime == null) return Colors.red;
-    return Colors.green;
-  }
-
-  String getStatusText(Attendance? att) {
-    if (att == null) return "Belum mengisi absensi";
-    if (att.status == "izin") return "Izin";
+  String getStatus(att) {
+    if (att == null) return "Belum mengisi absensi hari ini";
     if (att.checkOutTime == null) return "Belum check out";
-    return "Sudah mengisi absensi";
+    return "Hari ini sudah Absensi";
   }
 
-  // ================= UI =================
+  String buttonText(att) {
+    if (att == null) return "Check In";
+    if (att.checkOutTime == null) return "Check Out";
+    return "Selesai";
+  }
+
   @override
   Widget build(BuildContext context) {
-    final controller = Provider.of<AttendanceController>(context);
-
-    final attendance = controller.attendance;
-    final hasAttendance = attendance != null;
+    final c = context.watch<AttendanceController>();
+    final att = c.attendance;
 
     return Scaffold(
       appBar: AppBar(title: const Text("Absensi")),
       body: Column(
         children: [
-          // ===== MAP =====
+          // MAP
           SizedBox(
-            height: MediaQuery.of(context).size.height * 0.25,
+            height: 200,
             child: currentLatLng == null
                 ? const Center(child: CircularProgressIndicator())
                 : GoogleMap(
@@ -97,145 +105,84 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
           const SizedBox(height: 10),
 
-          // ===== STATUS =====
-          Container(
-            padding: const EdgeInsets.all(10),
-            margin: const EdgeInsets.symmetric(horizontal: 20),
-            decoration: BoxDecoration(
-              color: getStatusColor(attendance).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.info, color: getStatusColor(attendance)),
-                const SizedBox(width: 10),
-                Text(
-                  getStatusText(attendance),
-                  style: TextStyle(color: getStatusColor(attendance)),
-                ),
-              ],
-            ),
-          ),
+          // STATUS
+          Text(getStatus(att)),
 
           const SizedBox(height: 10),
 
-          // ===== ADDRESS =====
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Text(address, style: const TextStyle(fontSize: 14)),
-          ),
+          Text(address),
 
           const SizedBox(height: 20),
 
-          // ===== PILIHAN =====
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Row(
+          // HADIR / IZIN
+          if (att == null)
+            Row(
               children: [
                 Expanded(
-                  child: GestureDetector(
-                    onTap: !hasAttendance
-                        ? () async {
-                            if (currentLatLng == null) return;
-                            await controller.doCheckIn(
-                              lat: currentLatLng!.latitude,
-                              lng: currentLatLng!.longitude,
-                              address: address,
-                            );
-                            await controller.getTodayAttendance();
-                          }
-                        : null,
-                    child: Container(
-                      padding: const EdgeInsets.all(15),
-                      decoration: BoxDecoration(
-                        color: attendance?.status == "hadir"
-                            ? Colors.blue
-                            : Colors.grey[200],
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Center(child: Text("Hadir")),
-                    ),
+                  child: ElevatedButton(
+                    onPressed: () {
+                      setState(() => isIzin = false);
+                    },
+                    child: const Text("Hadir"),
                   ),
                 ),
-                const SizedBox(width: 10),
                 Expanded(
-                  child: GestureDetector(
-                    onTap: !hasAttendance
-                        ? () async {
-                            await controller.doIzin(alasanController.text);
-                            await controller.getTodayAttendance();
-                          }
-                        : null,
-                    child: Container(
-                      padding: const EdgeInsets.all(15),
-                      decoration: BoxDecoration(
-                        color: attendance?.status == "izin"
-                            ? Colors.orange
-                            : Colors.grey[200],
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Center(child: Text("Izin")),
-                    ),
+                  child: ElevatedButton(
+                    onPressed: () {
+                      setState(() => isIzin = true);
+                    },
+                    child: const Text("Izin"),
                   ),
                 ),
               ],
             ),
-          ),
 
-          const SizedBox(height: 10),
-
-          // ===== INPUT IZIN =====
-          if (attendance?.status == "izin" && !hasAttendance)
+          if (isIzin)
             Padding(
               padding: const EdgeInsets.all(20),
               child: TextField(
                 controller: alasanController,
                 decoration: const InputDecoration(
                   hintText: "Masukkan alasan izin",
-                  border: OutlineInputBorder(),
                 ),
               ),
             ),
 
           const Spacer(),
 
-          // ===== BUTTON =====
+          // BUTTON
           Padding(
             padding: const EdgeInsets.all(20),
             child: ElevatedButton(
-              onPressed: !hasAttendance || attendance.checkOutTime == null
-                  ? () async {
-                      if (currentLatLng == null) return;
+              onPressed: () async {
+                if (currentLatLng == null) return;
 
-                      if (!hasAttendance) {
-                        await controller.doCheckIn(
-                          lat: currentLatLng!.latitude,
-                          lng: currentLatLng!.longitude,
-                          address: address,
-                        );
-                      } else if (attendance.checkOutTime == null) {
-                        await controller.doCheckOut(
-                          lat: currentLatLng!.latitude,
-                          lng: currentLatLng!.longitude,
-                          address: address,
-                        );
-                      }
+                if (att == null) {
+                  if (isIzin) {
+                    await c.doIzin(alasanController.text);
+                  } else {
+                    await c.doCheckIn(
+                      lat: currentLatLng!.latitude,
+                      lng: currentLatLng!.longitude,
+                      address: address,
+                    );
+                  }
+                } else if (att.checkOutTime == null) {
+                  await c.doCheckOut(
+                    lat: currentLatLng!.latitude,
+                    lng: currentLatLng!.longitude,
+                    address: address,
+                  );
+                } else {
+                  context.pop(true);
+                  return;
+                }
 
-                      await controller.getTodayAttendance();
-                    }
-                  : null,
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size(double.infinity, 50),
-              ),
-              child: controller.isLoading
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : Text(
-                      !hasAttendance
-                          ? "Check In"
-                          : attendance.checkOutTime == null
-                          ? "Check Out"
-                          : "Selesai",
-                    ),
+                await c.getTodayAttendance();
+                await c.getHistory();
+                await c.getStats();
+              },
+              child: Text(buttonText(att)),
             ),
           ),
         ],

@@ -1,4 +1,5 @@
 import 'package:app_absensi/views/attendence/attendance_screen.dart';
+import 'package:app_absensi/views/attendence/history_screen.dart';
 import 'package:app_absensi/views/attendence/home_screen.dart';
 import 'package:flutter/material.dart';
 import '../../widgets/navigation_bar.dart';
@@ -12,12 +13,12 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  int currentIndex = 3; // default ke Profile
+  int currentIndex = 0; // default ke Profile
 
   final List<Widget> pages = [
     const HomeScreen(),
     const AttendanceScreen(),
-    const Center(child: Text("Riwayat")),
+    const HistoryScreen(),
     const ProfileScreen(),
   ];
 

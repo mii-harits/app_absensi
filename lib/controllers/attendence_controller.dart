@@ -4,9 +4,12 @@ import 'package:flutter/material.dart';
 
 class AttendanceController extends ChangeNotifier {
   Attendance? attendance;
+  List<Attendance> history = [];
+  Map<String, dynamic>? stats;
+
   bool isLoading = false;
 
-  // ================= GET TODAY =================
+  // ================= TODAY =================
   Future<void> getTodayAttendance() async {
     try {
       isLoading = true;
@@ -14,10 +17,30 @@ class AttendanceController extends ChangeNotifier {
 
       attendance = await AttendanceService.getTodayAttendance();
     } catch (e) {
-      debugPrint("getTodayAttendance error: $e");
+      debugPrint("today error: $e");
     } finally {
       isLoading = false;
       notifyListeners();
+    }
+  }
+
+  // ================= HISTORY =================
+  Future<void> getHistory() async {
+    try {
+      history = await AttendanceService.getHistory();
+      notifyListeners();
+    } catch (e) {
+      debugPrint("history error: $e");
+    }
+  }
+
+  // ================= STATS =================
+  Future<void> getStats() async {
+    try {
+      stats = await AttendanceService.getStats();
+      notifyListeners();
+    } catch (e) {
+      debugPrint("stats error: $e");
     }
   }
 
@@ -86,7 +109,14 @@ class AttendanceController extends ChangeNotifier {
     }
   }
 
-  // ================= HELPERS =================
+  // ================= DELETE =================
+  Future<void> delete(int id) async {
+    await AttendanceService.deleteAttendance(id);
+    await getHistory();
+    await getTodayAttendance();
+  }
+
+  // ================= HELPER =================
   String _today() {
     final now = DateTime.now();
     return "${now.year}-${_two(now.month)}-${_two(now.day)}";

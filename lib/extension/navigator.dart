@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 extension ExtendedNavigator on BuildContext {
-  Future<dynamic> push(Widget page, {String? name}) async {
-    return Navigator.push(
+  Future<T?> push<T>(Widget page, {String? name}) {
+    return Navigator.push<T>(
       this,
       MaterialPageRoute(
         builder: (_) => page,
@@ -11,8 +11,8 @@ extension ExtendedNavigator on BuildContext {
     );
   }
 
-  Future<dynamic> pushReplacement(Widget page, {String? name}) async {
-    return Navigator.pushReplacement(
+  Future<T?> pushReplacement<T>(Widget page, {String? name}) {
+    return Navigator.pushReplacement<T, T>(
       this,
       MaterialPageRoute(
         builder: (_) => page,
@@ -21,39 +21,31 @@ extension ExtendedNavigator on BuildContext {
     );
   }
 
-  Future<dynamic> pushNamed(String routeName, {Object? arguments}) async {
-    return Navigator.of(this).pushNamed(routeName, arguments: arguments);
+  Future<T?> pushNamed<T>(String routeName, {Object? arguments}) {
+    return Navigator.of(this).pushNamed<T>(routeName, arguments: arguments);
   }
 
-  // Future<dynamic> pushReplacementNamed(String newRouteName,
-  //     {Object? arguments}) {
-  //   Navigator.popUntil(this, ModalRoute.withName(newRouteName));
-  //   return Navigator.pushNamed(this, newRouteName, arguments: arguments);
-  // }
-  Future<dynamic> pushReplacementNamed(
-    String newRouteName, {
-    Object? arguments,
-  }) {
+  Future<T?> pushReplacementNamed<T>(String routeName, {Object? arguments}) {
     return Navigator.of(
       this,
-    ).pushReplacementNamed(newRouteName, arguments: arguments);
+    ).pushReplacementNamed<T, T>(routeName, arguments: arguments);
   }
 
-  Future<dynamic> pushNamedAndRemoveUntil(
-    String newRouteName,
+  Future<T?> pushNamedAndRemoveUntil<T>(
+    String routeName,
     RoutePredicate predicate, {
     Object? arguments,
-  }) async {
-    Navigator.pushNamedAndRemoveUntil(
+  }) {
+    return Navigator.pushNamedAndRemoveUntil<T>(
       this,
-      newRouteName,
+      routeName,
       predicate,
       arguments: arguments,
     );
   }
 
-  Future<dynamic> pushAndRemoveAll(Widget page, {String? name}) async {
-    return Navigator.pushAndRemoveUntil(
+  Future<T?> pushAndRemoveAll<T>(Widget page, {String? name}) {
+    return Navigator.pushAndRemoveUntil<T>(
       this,
       MaterialPageRoute(
         builder: (_) => page,
@@ -63,7 +55,7 @@ extension ExtendedNavigator on BuildContext {
     );
   }
 
-  void pop([result]) async {
-    return Navigator.of(this).pop(result);
+  void pop<T>([T? result]) {
+    Navigator.of(this).pop(result);
   }
 }

@@ -1,5 +1,6 @@
 import 'package:app_absensi/api/api_service.dart';
 import 'package:app_absensi/extension/navigator.dart';
+import 'package:app_absensi/services/attendence_service.dart';
 import 'package:app_absensi/storage/preference.dart';
 import 'package:app_absensi/views/auth/register_screen.dart';
 import 'package:app_absensi/views/main/main_screen.dart';
@@ -159,6 +160,11 @@ class _LoginScreenState extends State<LoginScreen> {
                                         );
                                         await PreferenceHandler()
                                             .storingIsLogin(true);
+
+                                        // 🔥 TAMBAHAN INI
+                                        AttendanceService.token = token;
+
+                                        print("TOKEN SET KE SERVICE: $token");
 
                                         ScaffoldMessenger.of(
                                           context,
