@@ -2,8 +2,7 @@ import 'package:app_absensi/api/api_service.dart';
 import 'package:app_absensi/extension/navigator.dart';
 import 'package:app_absensi/storage/preference.dart';
 import 'package:app_absensi/views/auth/login_screen.dart';
-import 'package:app_absensi/views/content/edit_profile.screen.dart';
-import 'package:app_absensi/widgets/navigation_bar.dart';
+import 'package:app_absensi/views/profile_session/edit_profile.screen.dart';
 import 'package:flutter/material.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -14,8 +13,6 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  int currentIndex = 1; // karena ini halaman Profile
-
   Map<String, dynamic>? user;
   bool isLoading = true;
 
@@ -123,18 +120,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ],
             ),
-
-      // ===== NAVBAR =====
-      bottomNavigationBar: CustomNavbar(
-        currentIndex: currentIndex,
-        onTap: (index) {
-          setState(() {
-            currentIndex = index;
-          });
-
-          // nanti bisa kamu isi navigasi
-        },
-      ),
     );
   }
 

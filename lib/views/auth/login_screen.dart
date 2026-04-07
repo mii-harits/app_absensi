@@ -2,7 +2,7 @@ import 'package:app_absensi/api/api_service.dart';
 import 'package:app_absensi/extension/navigator.dart';
 import 'package:app_absensi/storage/preference.dart';
 import 'package:app_absensi/views/auth/register_screen.dart';
-import 'package:app_absensi/views/content/profile_screen.dart';
+import 'package:app_absensi/views/main/main_screen.dart';
 import 'package:app_absensi/widgets/background_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -168,8 +168,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                           ),
                                         );
 
-                                        context.pushReplacement(
-                                          const ProfileScreen(),
+                                        context.pushAndRemoveAll(
+                                          const MainScreen(),
                                         );
                                       } else {
                                         ScaffoldMessenger.of(
