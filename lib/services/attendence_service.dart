@@ -136,31 +136,26 @@ class AttendanceService {
 
   // ================= HISTORY =================
   static Future<List<Attendance>> getHistory() async {
-    print("TOKEN DIPAKAI API (HISTORY): $token");
-
-    final res = await http.post(
+    final res = await http.get(
       Uri.parse(Endpoint.historyAbsen),
-      headers: {
-        "Authorization": "Bearer $token",
-        "Content-Type": "application/json",
-      },
-      body: jsonEncode({"email": "YOUR_EMAIL", "password": "YOUR_PASSWORD"}),
+      headers: {"Authorization": "Bearer $token"},
     );
 
-    print("STATUS CODE: ${res.statusCode}");
-    print("RESPONSE HISTORY:");
-    print(res.body);
+    print("STATUS HISTORY: ${res.statusCode}");
+    print("BODY HISTORY: ${res.body}");
 
     try {
       final data = jsonDecode(res.body);
+
       if (data['data'] != null) {
         return (data['data'] as List)
             .map((e) => Attendance.fromJson(e))
             .toList();
       }
+
       return [];
     } catch (e) {
-      print("ERROR PARSE HISTORY: $e");
+      print("ERROR HISTORY: $e");
       return [];
     }
   }
@@ -189,15 +184,16 @@ class AttendanceService {
 
   // ================= DELETE =================
   static Future<void> deleteAttendance(int id) async {
-    print("TOKEN DIPAKAI API (DELETE): $token");
-
     final res = await http.delete(
-      Uri.parse("${Endpoint.deleteAbsen}/$id"),
+      Uri.parse("https://appabsensi.mobileprojp.com/api/absen/$id"),
       headers: {"Authorization": "Bearer $token"},
     );
 
-    print("STATUS CODE: ${res.statusCode}");
-    print("RESPONSE DELETE:");
-    print(res.body);
+    print("DELETE STATUS: ${res.statusCode}");
+    print("DELETE BODY: ${res.body}");
+
+    if (res.statusCode != 200) {
+      throw Exception("Gagal delete data");
+    }
   }
 }

@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:app_absensi/api/api_service.dart';
 import 'package:app_absensi/extension/navigator.dart';
 import 'package:app_absensi/storage/preference.dart';
@@ -25,131 +26,174 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[200],
+      body: Stack(
+        children: [
+          // ================= BACKGROUND =================
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFF1E3A8A),
+                  Color(0xFF2563EB),
+                  Color(0xFF60A5FA),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+          ),
 
-      body: isLoading
-          ? Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                // ===== HEADER ORANGE =====
-                Container(
-                  width: double.infinity,
-                  height: 260,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFF59E0B), // orange
-                    borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(60),
-                      bottomRight: Radius.circular(60),
-                    ),
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+          Positioned(top: -50, right: -50, child: _blurCircle(200)),
+          Positioned(bottom: -60, left: -40, child: _blurCircle(250)),
+
+          SafeArea(
+            child: isLoading
+                ? const Center(
+                    child: CircularProgressIndicator(color: Colors.white),
+                  )
+                : Column(
                     children: [
-                      // Avatar
-                      CircleAvatar(
-                        radius: 45,
-                        backgroundColor: Colors.yellow,
-                        child: CircleAvatar(
-                          radius: 40,
-                          backgroundImage: NetworkImage(
-                            "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
+                      const SizedBox(height: 20),
+
+                      // ================= AVATAR =================
+                      Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white24, width: 3),
+                        ),
+                        child: const CircleAvatar(
+                          radius: 50,
+                          backgroundColor: Colors.white,
+                          child: Icon(
+                            Icons.person,
+                            size: 40,
+                            color: Colors.grey,
                           ),
                         ),
                       ),
 
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 15),
 
-                      // Nama
+                      // ================= NAME =================
                       Text(
                         user?['name'] ?? '-',
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: Colors.white,
-                          fontSize: 16,
+                          fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
 
                       const SizedBox(height: 5),
 
-                      // NIM
                       Text(
                         user?['email'] ?? '-',
-                        style: TextStyle(color: Colors.white70),
+                        style: const TextStyle(color: Colors.white70),
+                      ),
+
+                      const SizedBox(height: 25),
+
+                      // ================= MENU =================
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Column(
+                          children: [
+                            _menuCard(
+                              icon: Icons.person_outline,
+                              text: "Ubah Profil",
+                              onTap: () async {
+                                await context.push(const EditProfileScreen());
+                                fetchProfile();
+                              },
+                            ),
+
+                            const SizedBox(height: 12),
+
+                            _menuCard(
+                              icon: Icons.lock_outline,
+                              text: "Ubah Kata Sandi",
+                              onTap: () {
+                                print("Klik Ubah Password");
+                              },
+                            ),
+
+                            const SizedBox(height: 12),
+
+                            _menuCard(
+                              icon: Icons.logout,
+                              text: "Keluar",
+                              isDanger: true,
+                              onTap: () {
+                                PreferenceHandler().storingIsLogin(false);
+                                context.pushAndRemoveAll(LoginScreen());
+                              },
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
-                ),
-
-                const SizedBox(height: 20),
-
-                // ===== MENU LIST =====
-                _buildMenuItem(
-                  icon: Icons.person_outline,
-                  text: "Ubah Profil",
-                  color: Colors.blue,
-                  onTap: () async {
-                    await context.push(const EditProfileScreen());
-
-                    // 🔥 refresh data setelah balik
-                    fetchProfile();
-                  },
-                ),
-
-                _buildDivider(),
-
-                _buildMenuItem(
-                  icon: Icons.lock_outline,
-                  text: "Ubah Kata Sandi",
-                  color: Colors.blue,
-                  onTap: () {
-                    print("Klik Ubah Kata Sandi");
-                  },
-                ),
-
-                _buildDivider(),
-
-                _buildMenuItem(
-                  icon: Icons.logout,
-                  text: "Keluar",
-                  color: Colors.red,
-                  onTap: () {
-                    print("Logout");
-                    PreferenceHandler().storingIsLogin(false);
-                    context.pushAndRemoveAll(LoginScreen());
-                  },
-                ),
-              ],
-            ),
+          ),
+        ],
+      ),
     );
   }
 
-  // ===== WIDGET MENU =====
-  Widget _buildMenuItem({
+  // ================= COMPONENT =================
+
+  Widget _menuCard({
     required IconData icon,
     required String text,
-    required Color color,
     required VoidCallback onTap,
+    bool isDanger = false,
   }) {
-    return InkWell(
+    return GestureDetector(
       onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        child: Row(
-          children: [
-            Icon(icon, color: color),
-            const SizedBox(width: 15),
-            Expanded(child: Text(text, style: const TextStyle(fontSize: 14))),
-            const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
-          ],
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(18),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: Colors.white24),
+            ),
+            child: Row(
+              children: [
+                Icon(icon, color: isDanger ? Colors.redAccent : Colors.white),
+                const SizedBox(width: 15),
+                Expanded(
+                  child: Text(
+                    text,
+                    style: TextStyle(
+                      color: isDanger ? Colors.redAccent : Colors.white,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                const Icon(
+                  Icons.arrow_forward_ios,
+                  size: 16,
+                  color: Colors.white70,
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildDivider() {
-    return const Padding(
-      padding: EdgeInsets.symmetric(horizontal: 20),
-      child: Divider(),
+  Widget _blurCircle(double size) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.15),
+        shape: BoxShape.circle,
+      ),
     );
   }
 

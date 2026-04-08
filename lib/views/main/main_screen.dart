@@ -10,10 +10,21 @@ class MainScreen extends StatefulWidget {
 
   @override
   State<MainScreen> createState() => _MainScreenState();
+
+  // 🔥 biar bisa diakses dari screen lain
+  static _MainScreenState? of(BuildContext context) {
+    return context.findAncestorStateOfType<_MainScreenState>();
+  }
 }
 
 class _MainScreenState extends State<MainScreen> {
-  int currentIndex = 0; // default ke Profile
+  int currentIndex = 0;
+
+  void changePage(int index) {
+    setState(() {
+      currentIndex = index;
+    });
+  }
 
   final List<Widget> pages = [
     const HomeScreen(),
@@ -26,14 +37,9 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: pages[currentIndex],
-
       bottomNavigationBar: CustomNavbar(
         currentIndex: currentIndex,
-        onTap: (index) {
-          setState(() {
-            currentIndex = index;
-          });
-        },
+        onTap: changePage,
       ),
     );
   }

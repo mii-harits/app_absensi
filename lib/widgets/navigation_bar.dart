@@ -72,7 +72,7 @@ class CustomNavbar extends StatelessWidget {
                             BoxShadow(
                               color: Colors.orange.withOpacity(0.3),
                               blurRadius: 15,
-                              spreadRadius: 1,
+                              spreadRadius: 3,
                             ),
                           ]
                         : [],
@@ -82,9 +82,7 @@ class CustomNavbar extends StatelessWidget {
                         ? icon(PhosphorIconsStyle.fill)
                         : icon(PhosphorIconsStyle.regular),
                     size: 24,
-                    color: isActive
-                        ? Colors.orange
-                        : Colors.orange.withOpacity(0.5),
+                    color: isActive ? Colors.orange : Colors.white,
                   ),
                 ),
               ),
@@ -99,9 +97,7 @@ class CustomNavbar extends StatelessWidget {
                   label,
                   style: TextStyle(
                     fontSize: 10,
-                    color: isActive
-                        ? Colors.orange
-                        : Colors.orange.withOpacity(0.6),
+                    color: isActive ? Colors.orange : Colors.white,
                     fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
                   ),
                 ),

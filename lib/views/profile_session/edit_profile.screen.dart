@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:app_absensi/api/api_service.dart';
 import 'package:flutter/material.dart';
 
@@ -37,262 +38,285 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       });
     } catch (e) {
       setState(() => isLoading = false);
-
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Gagal ambil profile: $e")));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator(color: Colors.white)),
+      );
     }
 
     return Scaffold(
-      backgroundColor: Colors.grey[200],
-      body: SafeArea(
-        child: Column(
-          children: [
-            // ===== APP BAR =====
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-              child: Row(
-                children: [
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.arrow_back),
-                  ),
-                  const Expanded(
-                    child: Center(
-                      child: Text(
-                        "Ubah Profil",
+      body: Stack(
+        children: [
+          // ================= BACKGROUND =================
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFF1E3A8A),
+                  Color(0xFF2563EB),
+                  Color(0xFF60A5FA),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+          ),
+
+          Positioned(top: -50, right: -50, child: _blurCircle(200)),
+          Positioned(bottom: -60, left: -40, child: _blurCircle(250)),
+
+          SafeArea(
+            child: Column(
+              children: [
+                // ================= HEADER =================
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.15),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.arrow_back,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 15),
+                      const Text(
+                        "Edit Profil",
                         style: TextStyle(
-                          fontSize: 16,
+                          color: Colors.white,
+                          fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(width: 40),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 10),
-
-            // ===== AVATAR =====
-            Stack(
-              children: [
-                CircleAvatar(
-                  radius: 50,
-                  backgroundColor: Colors.yellow,
-                  child: const CircleAvatar(
-                    radius: 45,
-                    backgroundImage: NetworkImage(
-                      "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
-                    ),
+                    ],
                   ),
                 ),
-                Positioned(
-                  bottom: 0,
-                  right: 0,
-                  child: Container(
-                    decoration: const BoxDecoration(
-                      color: Colors.grey,
-                      shape: BoxShape.circle,
-                    ),
-                    padding: const EdgeInsets.all(6),
-                    child: const Icon(
-                      Icons.edit,
-                      size: 16,
-                      color: Colors.white,
+
+                // ================= AVATAR =================
+                Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white24, width: 3),
+                  ),
+                  child: const CircleAvatar(
+                    radius: 50,
+                    backgroundColor: Colors.white,
+                    child: Icon(Icons.person, size: 40, color: Colors.grey),
+                  ),
+                ),
+
+                const SizedBox(height: 25),
+
+                // ================= FORM =================
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: ListView(
+                      children: [
+                        _glassInput(label: "Nama", controller: nameController),
+
+                        const SizedBox(height: 15),
+
+                        _glassInput(
+                          label: "Email",
+                          controller: TextEditingController(
+                            text: profile?['email'] ?? '',
+                          ),
+                          enabled: false,
+                        ),
+
+                        const SizedBox(height: 15),
+
+                        _glassInput(
+                          label: "Batch",
+                          controller: TextEditingController(
+                            text:
+                                "Batch ${profile?['batch']?['batch_ke'] ?? '-'}",
+                          ),
+                          enabled: false,
+                        ),
+
+                        const SizedBox(height: 15),
+
+                        _glassInput(
+                          label: "Jurusan",
+                          controller: TextEditingController(
+                            text:
+                                "Jurusan ID ${profile?['training_id'] ?? '-'}",
+                          ),
+                          enabled: false,
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        const Text(
+                          "Jenis Kelamin",
+                          style: TextStyle(color: Colors.white70),
+                        ),
+
+                        const SizedBox(height: 10),
+
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _genderCard(
+                                "Laki-laki",
+                                selectedGender == "L",
+                                () => setState(() => selectedGender = "L"),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: _genderCard(
+                                "Perempuan",
+                                selectedGender == "P",
+                                () => setState(() => selectedGender = "P"),
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 30),
+
+                        // ================= BUTTON =================
+                        GestureDetector(
+                          onTap: isSubmit
+                              ? null
+                              : () async {
+                                  setState(() => isSubmit = true);
+
+                                  try {
+                                    final result =
+                                        await ApiService.updateProfile(
+                                          nameController.text,
+                                          selectedGender ?? "",
+                                        );
+
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(result['message']),
+                                      ),
+                                    );
+
+                                    Navigator.pop(context);
+                                  } catch (e) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text("Error: $e")),
+                                    );
+                                  }
+
+                                  setState(() => isSubmit = false);
+                                },
+                          child: Container(
+                            height: 55,
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Colors.orange, Colors.deepOrange],
+                              ),
+                              borderRadius: BorderRadius.circular(18),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.25),
+                                  blurRadius: 15,
+                                  offset: const Offset(0, 8),
+                                ),
+                              ],
+                            ),
+                            alignment: Alignment.center,
+                            child: isSubmit
+                                ? const CircularProgressIndicator(
+                                    color: Colors.white,
+                                  )
+                                : const Text(
+                                    "Simpan Perubahan",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
 
-            const SizedBox(height: 30),
+  // ================= COMPONENT =================
 
-            // ===== FORM =====
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: ListView(
-                  children: [
-                    // NAMA
-                    _buildTextField(label: "Nama", controller: nameController),
-
-                    const SizedBox(height: 15),
-
-                    // EMAIL (LOCK)
-                    _buildTextField(
-                      label: "Email",
-                      controller: TextEditingController(
-                        text: profile?['email'] ?? '',
-                      ),
-                      enabled: false,
-                      fillColor: Colors.orange[200],
-                    ),
-
-                    const SizedBox(height: 15),
-
-                    // BATCH (LOCK)
-                    _buildTextField(
-                      label: "Batch",
-                      controller: TextEditingController(
-                        text: "Batch ${profile?['batch']?['batch_ke'] ?? '-'}",
-                      ),
-                      enabled: false,
-                      fillColor: Colors.orange[200],
-                    ),
-
-                    const SizedBox(height: 15),
-
-                    // JURUSAN (LOCK)
-                    // JURUSAN (LOCK)
-                    _buildTextField(
-                      label: "Jurusan",
-                      controller: TextEditingController(
-                        text: "Jurusan ID ${profile?['training_id'] ?? '-'}",
-                      ),
-                      enabled: false,
-                      fillColor: Colors.orange[200],
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    // ===== GENDER =====
-                    const Text("Jenis Kelamin"),
-                    const SizedBox(height: 8),
-
-                    Row(
-                      children: [
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () => setState(() => selectedGender = "L"),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              decoration: BoxDecoration(
-                                color: selectedGender == "L"
-                                    ? const Color(0xFF1E3A8A)
-                                    : Colors.grey.shade300,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Center(
-                                child: Text(
-                                  "Laki-laki",
-                                  style: TextStyle(
-                                    color: selectedGender == "L"
-                                        ? Colors.white
-                                        : Colors.black,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () => setState(() => selectedGender = "P"),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              decoration: BoxDecoration(
-                                color: selectedGender == "P"
-                                    ? const Color(0xFF1E3A8A)
-                                    : Colors.grey.shade300,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Center(
-                                child: Text(
-                                  "Perempuan",
-                                  style: TextStyle(
-                                    color: selectedGender == "P"
-                                        ? Colors.white
-                                        : Colors.black,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 30),
-
-                    // ===== BUTTON =====
-                    SizedBox(
-                      height: 50,
-                      child: ElevatedButton(
-                        onPressed: isSubmit
-                            ? null
-                            : () async {
-                                setState(() => isSubmit = true);
-
-                                try {
-                                  final result = await ApiService.updateProfile(
-                                    nameController.text,
-                                    selectedGender ?? "",
-                                  );
-
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text(result['message'])),
-                                  );
-
-                                  Navigator.pop(context);
-                                } catch (e) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text("Error: $e")),
-                                  );
-                                }
-
-                                setState(() => isSubmit = false);
-                              },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF1E3A8A),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(25),
-                          ),
-                        ),
-                        child: isSubmit
-                            ? const CircularProgressIndicator(
-                                color: Colors.white,
-                              )
-                            : const Text(
-                                "Done",
-                                style: TextStyle(fontSize: 16),
-                              ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
+  Widget _glassInput({
+    required String label,
+    required TextEditingController controller,
+    bool enabled = true,
+  }) {
+    return TextField(
+      controller: controller,
+      enabled: enabled,
+      style: const TextStyle(color: Colors.white),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(color: Colors.white70),
+        filled: true,
+        fillColor: Colors.white.withOpacity(0.1),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(15),
+          borderSide: BorderSide.none,
         ),
       ),
     );
   }
 
-  // ===== TEXTFIELD CUSTOM =====
-  Widget _buildTextField({
-    required String label,
-    required TextEditingController controller,
-    bool enabled = true,
-    Color? fillColor,
-  }) {
-    return TextFormField(
-      controller: controller,
-      enabled: enabled,
-      decoration: InputDecoration(
-        labelText: label,
-        filled: true,
-        fillColor: fillColor ?? Colors.grey[100],
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+  Widget _genderCard(String text, bool active, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          gradient: active
+              ? const LinearGradient(colors: [Colors.orange, Colors.deepOrange])
+              : null,
+          color: active ? null : Colors.white.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(15),
+        ),
+        child: Center(
+          child: Text(
+            text,
+            style: TextStyle(
+              color: active ? Colors.white : Colors.white70,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _blurCircle(double size) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.15),
+        shape: BoxShape.circle,
       ),
     );
   }

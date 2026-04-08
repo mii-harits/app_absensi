@@ -1,5 +1,6 @@
 import 'package:app_absensi/models/attendence_model.dart';
 import 'package:app_absensi/services/attendence_service.dart';
+import 'package:app_absensi/services/location_service.dart';
 import 'package:flutter/material.dart';
 
 class AttendanceController extends ChangeNotifier {
@@ -8,6 +9,9 @@ class AttendanceController extends ChangeNotifier {
   Map<String, dynamic>? stats;
 
   bool isLoading = false;
+
+  double? distance;
+  String? currentAddress;
 
   // ================= TODAY =================
   Future<void> getTodayAttendance() async {
@@ -111,9 +115,17 @@ class AttendanceController extends ChangeNotifier {
 
   // ================= DELETE =================
   Future<void> delete(int id) async {
-    await AttendanceService.deleteAttendance(id);
-    await getHistory();
-    await getTodayAttendance();
+    try {
+      await AttendanceService.deleteAttendance(id);
+
+      attendance = null; // 🔥 RESET LOCAL STATE
+
+      await getHistory();
+      await getTodayAttendance();
+      await getStats();
+    } catch (e) {
+      debugPrint("delete error: $e");
+    }
   }
 
   // ================= HELPER =================
@@ -128,4 +140,22 @@ class AttendanceController extends ChangeNotifier {
   }
 
   String _two(int n) => n.toString().padLeft(2, '0');
+
+  // ================= GET LOCATION DATA =================
+  Future<void> getLocationData() async {
+    try {
+      final pos = await LocationService.getPosition();
+
+      distance = LocationService.getDistance(pos.latitude, pos.longitude);
+
+      currentAddress = await LocationService.getAddress(
+        pos.latitude,
+        pos.longitude,
+      );
+
+      notifyListeners();
+    } catch (e) {
+      debugPrint("location error: $e");
+    }
+  }
 }
