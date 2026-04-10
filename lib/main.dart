@@ -1,7 +1,7 @@
 import 'package:app_absensi/controllers/attendence_controller.dart';
 import 'package:app_absensi/services/attendence_service.dart';
 import 'package:app_absensi/storage/preference.dart';
-import 'package:app_absensi/views/auth/login_screen.dart';
+import 'package:app_absensi/views/auth/splash_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -33,7 +33,7 @@ class MyApp extends StatelessWidget {
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         ),
 
-        home: const LoginScreen(),
+        home: SplashScreen(),
       ),
     );
   }

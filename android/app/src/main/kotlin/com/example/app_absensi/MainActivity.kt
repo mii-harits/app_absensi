@@ -1,4 +1,4 @@
-package com.example.app_absensi
+package com.ppdk.syncattend
 
 import io.flutter.embedding.android.FlutterActivity
 
